@@ -1,0 +1,50 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Odyssey-Login</title>
+</head>
+<body>
+    <h1>Odyssey</h1>
+    <h1>Login</h1>
+    <ul>
+        <li><a href='/sign_up'>Sign Up</a></li>
+        <li><a href='/login'>Login</a></li>
+    </ul>
+    <form>
+        email:
+        <input type='email' id='var1'>
+        pwd:
+        <input type='text' id='var2'>
+        <input type='submit'>
+    </form>
+    <script>
+        const form = document.querySelector('form');
+        form.addEventListener('submit', async (event) => {
+            try {
+                event.preventDefault();
+                const email = document.getElementById('var1').value;
+                const pwd = document.getElementById('var2').value;
+                
+                const res = await fetch ('/login', {
+                    method: 'POST', 
+                    body: JSON.stringify({
+                        email: email,
+                        password: pwd,
+                    }),
+                    headers: { 'Content-Type': 'application/json'}
+                });
+                /*
+                const res = fetch('/', {
+                    method: 'GET', 
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                */
+                // location.assign('/home');
+            } catch(err) {
+                console.log(err);
+            }
+        });
+    </script>
+    
+</body>
+</html>
