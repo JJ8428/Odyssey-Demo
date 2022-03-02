@@ -1,45 +1,62 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Odyssey-Login</title>
+    <title>Odyssey - Login</title>
 </head>
 <body>
-    <h1>Odyssey</h1>
-    <h1>Login</h1>
+    <p>Odyssey - Login</p>
+    <hr>
     <ul>
+        <li><a href='/'>Home</a></li>
         <li><a href='/sign_up'>Sign Up</a></li>
-        <li><a href='/login'>Login</a></li>
     </ul>
+    <div id='warning_div'></div>
     <form>
-        email:
-        <input type='email' id='var1'>
-        pwd:
-        <input type='text' id='var2'>
+        Email:
+        <input type='email' id='email_input'>
+        <br>
+        Password:
+        <input type='text' id='pwd_input'>
+        <br>
+        <br>
         <input type='submit'>
     </form>
     <script>
         const form = document.querySelector('form');
+        const warning_div = document.querySelector('#warning_div');
         form.addEventListener('submit', async (event) => {
             try {
                 event.preventDefault();
-                const email = document.getElementById('var1').value;
-                const pwd = document.getElementById('var2').value;
-                
-                const res = await fetch ('/login', {
+                const email = document.getElementById('email_input').value;
+                const pwd = document.getElementById('pwd_input').value;
+                fetch('/login', {
                     method: 'POST', 
                     body: JSON.stringify({
                         email: email,
                         password: pwd,
                     }),
-                    headers: { 'Content-Type': 'application/json'}
+                    headers: {'Content-Type': 'application/json'}
+                }).then(resp => {
+                    resp.text().then(resp_read => {
+                        if (resp_read == 'SUCCESS') {
+                            location.assign('/dashboard');
+                        }
+                        else {
+                            const resp_json = JSON.parse(resp_read);
+                            // If validation errors exists
+                            if (resp_json.vald_errs) {
+                                var warning_html = '';
+                                resp_json.vald_errs.forEach(el => {
+                                    warning_html += `${el.msg}<br>`
+                                });
+                                warning_html = warning_html.substring(0,warning_html.length-4);
+                                warning_div.innerHTML = warning_html;
+                            } else if (resp_json.error) {
+                                warning_div.innerHTML = resp_json.error;
+                            }
+                        }
+                    });
                 });
-                /*
-                const res = fetch('/', {
-                    method: 'GET', 
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                */
-                // location.assign('/home');
             } catch(err) {
                 console.log(err);
             }

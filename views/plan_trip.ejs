@@ -1,0 +1,1047 @@
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Odyssey - Create an Itinerary</title>
+        <style>
+            #coord_td {
+                width: 25%;
+            }
+            #food_places:hover,#shop_places:hover,#etmt_places:hover,#need_places:hover,#events:hover,#spots:hover,#chosen_row:hover {
+                background-color: lightgrey;
+            }
+            #food_search_result,#shop_search_result,#etmt_search_result,#need_search_result,#event_search_result,#spot_search_result {
+                overflow-y: auto;
+                height: 300px;
+            }
+            #food_div,#shop_div,#etmt_div,#need_div,#event_div,#spot_div,#custom_div,input[type=text],input[type=number],button {
+               width: 100%;
+            }
+            #image_div {
+                overflow-x:auto;
+            }
+            img {
+                height: 100px;
+            }
+            input[type=range] {
+                width: 99%;
+            }
+            kbd {
+                margin: 0px 0.1em;
+                padding: 0.1em 0.6em;
+                border-radius: 3px;
+                border: 1px solid rgb(60, 60, 60);
+                line-height: 1.7;
+            }
+            label, small, kbd {
+                font-size: 50%;
+            }
+            #left_tab,#right_tab {
+                width: 50%;
+            }
+            #map {
+                height: 500px;
+                width: 100%;
+            }
+            #more_detail {
+                column-span: 2;
+            }
+            #right_tab {
+                position: absolute;
+                right: 0;
+            }
+            #shift_div {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                display: inline;
+                width: 100%;
+            }
+            #shop_div,#etmt_div,#need_div,#event_div,#spot_div,#custom_div {
+                position: absolute;
+                top: 0;
+                left: 0;
+                visibility: hidden;
+            }
+            table {
+                width: 100%;
+            }
+            table, td, th {
+                border-collapse:collapse;
+                border: 1px solid black;
+            }
+            #wrap_div {
+                position: relative;
+                overflow:hidden
+            }
+            #warning,#general_loc_warning,#custom_warning {
+                color: red;
+            }
+            .swd-button {
+                display: inline-block;
+                font: bold 12px Arial, Helvetica, sans-serif;
+                padding: 10px 15px;
+                text-decoration: none;
+                text-transform: uppercase;
+            }
+            #shift_wrap {
+                position: relative;
+                width: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <p>Odyssey - Create an Itinerary</p>
+        <hr>
+        <p>Logged in as: <%= email %></p>
+        <ul>
+            <li><a href='/dashboard'>Dashboard</a></li>
+        </ul>
+        <table>
+            <tr>
+                <td id='coord_td'>
+                    General Location:
+                    <hr>
+                    <input type='text' id='general_loc'>
+                    <br>
+                    <div id='general_loc_warning'></div>
+                    <button onclick=get_user_location()>Use my location</button>
+                </td>
+                <td id='coord_td'>
+                    Geotag:
+                    <hr>
+                    <span id='geotag'></span>
+                </td>
+                <td id='coord_td'>
+                    Coordinate:
+                    <hr>
+                    <span id='latlng'></span>
+                </td>
+                <td>
+                    Radius: 
+                    <output>30 miles</output>
+                    <hr>
+                    <input type='range' id='radius_mi' min=10 max=50 value=30 oninput="this.previousElementSibling.previousElementSibling.value = this.value + ' miles'">
+                </td>
+            </tr>
+            <tr>
+                <td id='wrap_div'>
+                    <div id='food_div'>
+                        Food:
+                        <hr>
+                        <label><input type='checkbox' name='food' value='restaurant' checked=true>Restaurant</label>
+                        <br>
+                        <label><input type='checkbox' name='food' value='bar' checked=true>Bar</label>
+                        <br>
+                        <label><input type='checkbox' name='food' value='bakery' checked=true>Bakery</label>
+                        <br>
+                        <label><input type='checkbox' name='food' value='cafe' checked=true>Cafe</label>
+                        <br>
+                        <br>
+                        Search:
+                        <br>
+                        <button id='reload' onclick=get_food_results(true)>Reload</button>
+                        <br>
+                        <input type='text' id='food_search'>
+                        <br>
+                        <div id='food_search_result'></div>
+                    </div>
+                    <div id='shop_div'>
+                        Shop:
+                        <hr>
+                        <label><input type='checkbox' name='shop' value='clothing_store' checked=true>Clothing Store</label>
+                        <br>
+                        <label><input type='checkbox' name='shop' value='convenience_store' checked=true>Convenience Store</label>
+                        <br>
+                        <label><input type='checkbox' name='shop' value='department_store' checked=true>Department Store</label>
+                        <br>
+                        <label><input type='checkbox' name='shop' value='shoe_store' checked=true>Shoe Store</label>
+                        <br>
+                        <label><input type='checkbox' name='shop' value='shopping_mall' checked=true>Shopping Mall</label>
+                        <br>
+                        <label><input type='checkbox' name='shop' value='supermarket' checked=true>Supermarket</label>
+                        <br>
+                        <br>
+                        Search:
+                        <br>
+                        <button id='reload' onclick=get_shop_results(true)>Reload</button>
+                        <br>
+                        <input type='text' id='shop_search'>
+                        <br>
+                        <div id='shop_search_result'></div>
+                    </div>
+                    <div id='etmt_div'>
+                        Entertainment:
+                        <hr>
+                        <label><input type='checkbox' name='etmt' value='amusement_park' checked=true>Amusement Park</label>
+                        <br>
+                        <label><input type='checkbox' name='etmt' value='aquarium' checked=true>Aquarium</label>
+                        <br>
+                        <label><input type='checkbox' name='etmt' value='art_gallery' checked=true>Art Gallery</label>
+                        <br>
+                        <label><input type='checkbox' name='etmt' value='bowling_alley' checked=true>Bowling Alley</label>
+                        <br>
+                        <label><input type='checkbox' name='etmt' value='casino' checked=true>Casino</label>
+                        <br>
+                        <label><input type='checkbox' name='etmt' value='movie_theater' checked=true>Movie Theater</label>
+                        <br>
+                        <label><input type='checkbox' name='etmt' value='museum' checked=true>Museum</label>
+                        <br>
+                        <label><input type='checkbox' name='etmt' value='park' checked=true>Park</label>
+                        <br>
+                        <label><input type='checkbox' name='etmt' value='tourist_attraction' checked=true>Tourist Attraction</label>
+                        <br>
+                        <label><input type='checkbox' name='etmt' value='zoo' checked=true>Zoo</label>
+                        <br>
+                        <br>
+                        Search:
+                        <br>
+                        <button id='reload' onclick=get_etmt_results(true)>Reload</button>
+                        <br>
+                        <input type='text' id='etmt_search'>
+                        <br>
+                        <div id='etmt_search_result'></div>
+                    </div>
+                    <div id='need_div'>
+                        Necessities:
+                        <hr>
+                        <label><input type='checkbox' name='need' value='ATM' checked=true>ATM</label>
+                        <br>
+                        <label><input type='checkbox' name='need' value='car_rental' checked=true>Car Rental</label>
+                        <br>
+                        <label><input type='checkbox' name='need' value='doctor' checked=true>Doctor</label>
+                        <br>
+                        <label><input type='checkbox' name='need' value='laundry' checked=true>Laundry</label>
+                        <br>
+                        <label><input type='checkbox' name='need' value='lodging' checked=true>Lodging</label>
+                        <br>
+                        <label><input type='checkbox' name='need' value='pharmacy' checked=true>Pharmacy</label>
+                        <br>
+                        <label><input type='checkbox' name='need' value='post_office' checked=true>Post Office</label>
+                        <br>
+                        <label><input type='checkbox' name='need' value='taxi_stand' checked=true>Taxi Stand</label>
+                        <br>
+                        <br>
+                        Search:
+                        <br>
+                        <button id='reload' onclick=get_need_results(true)>Reload</button>
+                        <br>
+                        <input type='text' id='need_search'>
+                        <br>
+                        <div id='need_search_result'></div>
+                    </div>
+                    <div id='event_div'>
+                        Events:
+                        <hr>
+                        Search:
+                        <br>
+                        <button id='reload' onclick=get_event_results(true)>Reload</button>
+                        <br>
+                        <input type='text' id='event_search'>
+                        <br>
+                        <div id='event_search_result'></div>
+                    </div>
+                    <div id='spot_div'>
+                        Photospots:
+                        <hr>
+                        <button id='reload' onclick=get_spot_results()>Reload</button>
+                        <br>
+                        <div id='spot_search_result'></div>
+                    </div>
+                    <div id='custom_div'>
+                        Custom:
+                        <hr>
+                        Search:
+                        <br>
+                        <input type='text' id='custom_search'>
+                        <br>
+                        Address:
+                        <hr>
+                        <div id='custom_search_result'></div>
+                        <br>
+                        Add As:
+                        <input type='text' id='custom_add_as'>
+                        <br>
+                        <button id='custom_add_as' onclick=record_custom()>Add</button>
+                        <br>
+                        <div id='custom_warning'></div>
+                    </div>
+                    <div id='shift_div'>
+                        <div id='shift_wrap'>
+                            <button id='left_tab' value='<' onclick="shift_tab(-1)"><</button>
+                            <button id='right_tab' inline=true value='>' onclick="shift_tab(1)">></button>
+                        </div>
+                    </div>
+                </td>
+                <td id='map_div' colspan="3">
+                    <div id='map'></div>
+                </td>
+            </tr>
+            <tr>
+                <td colspan='2'>
+                    <div id='more_details'></div>   
+                </td>
+                <td colspan='2'>
+                    <table id='chosen'></table>
+                </td>
+            </tr>
+        </table>     
+        <script src='https://maps.googleapis.com/maps/api/js?key=AIzaSyASx7OI51zra9ErZ76STNZSqVyt8t9v6zg'></script>
+        <script>
+            window.addEventListener("beforeunload", function (e) {
+                var confirmationMessage = 'All data will be lost. Are you sure?';
+
+                (e || window.event).returnValue = confirmationMessage; //Gecko + IE
+                return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
+            });
+
+            const geocoder = new google.maps.Geocoder();
+
+            const map = new google.maps.Map(
+                document.querySelector('#map'),
+                {
+                    center: {lat:37.091,lng:-95.712},
+                    zoom: 4
+                }
+            );
+
+            var gen_loc_pos;
+            var gen_loc_val;
+            const gen_loc_el = document.querySelector('#general_loc');
+            const gen_loc_warning_el = document.querySelector('#general_loc_warning');
+            const geotag_span = document.querySelector('#geotag');
+            const latlng_span = document.querySelector('#latlng');
+            const radius_mi_el = document.querySelector('#radius_mi');
+
+            const tabs = ['#food_div', '#shop_div', '#etmt_div', '#need_div', '#event_div', '#spot_div', '#custom_div'];
+            var current_tab = 0;
+
+            const markers = new Map();
+
+            const food_places = new Map();
+            const shop_places = new Map();
+            const etmt_places = new Map();
+            const need_places = new Map();
+            const events = new Map();
+            const spots = new Map();
+            var custom_result;
+            
+            var geotag;
+
+            const chosen_places = new Map();
+            const chosen_events = new Map();
+            const chosen_spots = new Map();
+            const chosen_customs = new Map();
+
+            const food_input_el = document.querySelector('#food_search');
+            var food_input_val;
+            const food_search_result_el = document.querySelector('#food_search_result');
+            var food_input_timer;
+
+            const more_details_el = document.querySelector('#more_details');
+
+            const event_input_el = document.querySelector('#event_search');
+            var event_input_val;
+            const event_search_result_el = document.querySelector('#event_search_result');
+            var event_input_timer;
+
+            const spot_search_result_el = document.querySelector('#spot_search_result');
+
+            const custom_input_el = document.querySelector('#custom_search');
+            var custom_input_val;
+            const custom_warning_el = document.querySelector('#custom_warning');
+            const custom_search_result_el = document.querySelector('#custom_search_result');
+            var custom_input_timer;
+            const custom_add_as_el = document.querySelector('#custom_add_as');
+
+            const chosen_table_el = document.querySelector('#chosen');
+
+            function geo_code(req, success, failure) {
+                geocoder.geocode(req).then(result => {
+                    const {results} = result;
+                    success(results[0]);
+                })
+                .catch((err) => {
+                    console.log('Failed geo_code() attempt:', err);
+                    failure();
+                });
+            }
+
+            function get_user_location() {
+                if (navigator.geolocation){
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            console.log('FOUND USER POS');
+                            // reset();
+                            gen_loc_pos = {
+                                lat: Math.ceil(position.coords.latitude*1000)/1000,
+                                lng: Math.ceil(position.coords.longitude*1000)/1000
+                            };
+                            latlng_span.innerHTML = `<small>{${gen_loc_pos.lat},${gen_loc_pos.lng}}</small>`;
+                            geocoder.geocode({'latLng':gen_loc_pos}).then((geo_data) => {
+                                geotag = geo_data.results[0].formatted_address;
+                                geotag_span.innerHTML = `<small>${geotag}</small>`;
+                            });
+                            gen_loc_el.value = 'User Location';
+                            var new_gen_loc_center = new google.maps.LatLng(
+                                gen_loc_pos.lat,
+                                gen_loc_pos.lng
+                            );
+                            map.panTo(new_gen_loc_center);
+                            map.setZoom(10);
+                            gen_loc_warning_el.innerHTML = '';
+                            console.log('SUCCESS, marked GEN_LOC');
+                            shift_tab(0);
+                        },
+                        (error) => {
+                            console.log('DENIED USER POS');
+                            gen_loc_warning_el.innerHTML = 'Unable to find user General Location';
+                            gen_loc_pos = undefined;
+                        }
+                    );
+                }
+            }
+            
+            function get_gen_location() {
+                clearTimeout(gen_loc_timer);
+                var gen_loc_timer = setTimeout(() => {
+                    if (gen_loc_el.value != gen_loc_val) {
+                        // reset();
+                        gen_loc_val = gen_loc_el.value;
+                        geo_code({address: gen_loc_val}, (result) => {
+                            geotag = result.formatted_address;
+                            geotag_span.innerHTML = `<small>${geotag}</small>`;
+                            gen_loc_pos = {
+                                lat: Math.ceil(result.geometry.location.lat()*1000)/1000,
+                                lng: Math.ceil(result.geometry.location.lng()*1000)/1000
+                            };
+                            const new_gen_loc_center = new google.maps.LatLng(
+                                result.geometry.location.lat(),
+                                result.geometry.location.lng()
+                            );
+                            latlng_span.innerHTML = `<small>{${gen_loc_pos.lat},${gen_loc_pos.lng}}</small>`;
+                            map.panTo(new_gen_loc_center);
+                            map.setZoom(10);
+                            gen_loc_warning_el.innerHTML = '';
+                            console.log('SUCCESS, marked GEN_LOC');
+                            shift_tab(0);
+                        }, () => {
+                            console.log('FAILURE, unable to mark GEN_LOC');
+                            gen_loc_warning_el.innerHTML = '<small>Invalid General Location</small>';
+                            gen_loc_pos = undefined;
+                        });
+                    }
+                }, 1000);
+            }
+            
+            gen_loc_el.addEventListener('keyup', () => {
+                get_gen_location();
+            });
+
+            function shift_tab(shift) {
+                more_details_el.innerHTML = '';
+                current_tab += shift;
+                if (current_tab < 0) {
+                    current_tab = tabs.length - 1;
+                } else if (current_tab > tabs.length - 1) {
+                    current_tab = 0;
+                }
+                tabs.forEach(el => {
+                    document.querySelector(el).style.visibility = "hidden";
+                });
+                document.querySelector(tabs[current_tab]).style.visibility = "visible";
+                if (gen_loc_pos == undefined) {
+                    return;
+                }
+                switch (current_tab) {
+                    case 0:
+                        if (food_search_result_el.innerHTML == '' || shift == 0) {
+                            get_food_results();
+                        }
+                        break;
+                    case 1:
+                        if (shop_search_result_el.innerHTML == '' || shift == 0) {
+                            get_shop_results();                            
+                        }
+                        break;
+                    case 2:
+                        if (etmt_search_result_el.innerHTML == '' || shift == 0) {
+                            get_etmt_results();                            
+                        }
+                        break;
+                    case 3:
+                        if (need_search_result_el.innerHTML == '' || shift == 0) {
+                            get_need_results();                            
+                        }
+                        break;
+                    case 4:
+                        if (event_search_result_el.innerHTML == '' || shift == 0) {
+                            get_event_results();                            
+                        }
+                        break;
+                    case 5:
+                        if (spot_search_result_el.innerHTML == '' || shift == 0) {
+                            get_spot_results();                            
+                        }
+                        break;
+                }
+                map.setZoom(10);
+                remove_marker('selected');
+                const new_gen_loc_center = new google.maps.LatLng(
+                    gen_loc_pos.lat,
+                    gen_loc_pos.lng
+                );
+                map.panTo(new_gen_loc_center);
+            }
+
+            function add_marker(key, lat, lng) {
+                markers.set(key, new google.maps.Marker({
+                        position: {
+                            lat: lat,
+                            lng: lng
+                        },
+                        map: map
+                    })
+                );
+            }
+
+            function remove_marker(key) {
+                if (markers.get(key) != null) {
+                    markers.get(key).setMap(null);
+                    markers.delete(key);
+                }
+            }
+
+            function get_food_results(on_reload) {
+                if (gen_loc_pos == undefined) {
+                    food_search_result_el.innerHTML = '<small id=\'warning\'>Please provide the general location of the itinerary.</small>';
+                    return;
+                }
+                clearTimeout(food_input_timer);
+                food_input_timer = setTimeout(() => {
+                    if (food_input_el.value != food_input_val || on_reload) {
+                        food_input_val = food_input_el.value;
+                        food_search_result_el.innerHTML = 'Fetching...';
+                        var food_subtypes = '';
+                        document.querySelectorAll("input[name='food']:checked").forEach(el => {
+                            food_subtypes += el.value + ',';
+                        });
+                        food_subtypes = food_subtypes.slice(0, -1);
+                        var food_url = `/find_nearby_places?subtypes=${food_subtypes}&lat=${gen_loc_pos.lat}&lng=${gen_loc_pos.lng}&radius=${radius_mi_el.value}`;
+                        if (food_input_el.value != '') {
+                            food_url += `&keyword=${food_input_el.value.replace(' ', '%2C')}`;
+                        }
+                        fetch(food_url, {
+                            method: 'GET',
+                            headers: {'Content-Type': 'application/json'}
+                        }).then(resp => {
+                            resp.text().then(resp_read => {
+                                if (resp_read == 'FAILURE') {
+                                    console.log('FAILURE');
+                                    food_search_result_el.innerHTML = 'Unable to fetch data.';
+                                } else {
+                                    const food_results = JSON.parse(resp_read);
+                                    var innerHTML = '';
+                                    const chosen_place_ids = [...chosen_places.keys()];
+                                    food_places.clear();
+                                    if (food_results.places.length) {
+                                        for (x = 0; x < food_results.places.length; x++) {
+                                            if (!chosen_place_ids.includes(food_results.places[x].place_id)) {
+                                                food_places.set(food_results.places[x].place_id, food_results.places[x]);
+                                                var types_kbd_html = '';
+                                                food_results.places[x].types.forEach(el => {
+                                                    types_kbd_html += '<kbd>';
+                                                    el.split('_').forEach(el_el => {
+                                                        types_kbd_html += el_el[0].toUpperCase() + el_el.slice(1);
+                                                        if (el_el != el[el.length - 1]) {
+                                                            types_kbd_html += ' ';
+                                                        }
+                                                    });
+                                                    types_kbd_html += '</kbd>\n<br>\n';
+                                                })
+                                                innerHTML += `<div id='food_places' name='${food_results.places[x].place_id}' onclick=more_place_details(this,'${food_results.places[x].place_id}')>
+                                                        <small><b>${food_results.places[x].name}</b></small>
+                                                        <hr>
+                                                        ${types_kbd_html}
+                                                        <small>Rating:${food_results.places[x].rating}</small>
+                                                        <br>
+                                                        <small>Price Level:${food_results.places[x].price_level}</small>
+                                                        <br>
+                                                        <small>${food_results.places[x].address}</small>
+                                                        <br>
+                                                        <button onclick=record_place('${food_results.places[x].place_id}')>Add</button>
+                                                    </div>
+                                                    <br>`;
+                                            }
+                                        }
+                                    innerHTML = innerHTML.replace(/undefined/g, 'N/A');
+                                    } else {
+                                        innerHTML = '<small>No food hot spots in the provided area. :(</small>';
+                                        console.log('No food found');
+                                    }
+                                    food_search_result_el.innerHTML = innerHTML;
+                                }
+                            });
+                        });
+                    }
+                }, 1000);
+            }
+
+            food_input_el.addEventListener('keyup', () => {
+                get_food_results();
+            });   
+
+            function more_place_details(el, place_id) {
+                var detail_url = `/find_place_details?place_id=${place_id}`;
+                fetch(detail_url, {
+                    method: 'GET',
+                    headers: {'Content-Type': 'application/json'}
+                }).then(resp => {
+                    resp.text().then(resp_read => {
+                        if (resp_read == 'FAILURE') {
+                            console.log('FAILURE');
+                            more_details_el.innerHTML = 'Unable to fetch data.';
+                        } else {
+                            resp_json = JSON.parse(resp_read);
+                            var types_kbd_html = '';
+                            resp_json.types.forEach(el => {
+                                types_kbd_html += '<kbd>';
+                                const split_el = el.split('_');
+                                split_el.forEach(el_el => {
+                                    types_kbd_html += el_el[0].toUpperCase() + el_el.slice(1);
+                                    if (split_el.length != 1 && el_el != split_el[split_el.length - 1]) {
+                                        types_kbd_html += ' ';
+                                    }
+                                });
+                                types_kbd_html += '</kbd>\n';
+                            });
+                            var innerHTML = `<small><b>Name:</b>${resp_json.name}</small>
+                                <br>
+                                ${types_kbd_html}
+                                <br>
+                                <small><b>Address:</b>${resp_json.formatted_address}</small>
+                                <br>
+                                <small><b>Phone Number:</b>${resp_json.international_phone_number}</small>
+                                <br>
+                                <small><b>Website:</b>${resp_json.website}</small>
+                                <br>
+                                <small><b>Rating:</b>${resp_json.rating}</small>
+                                <br>
+                                <small><b>Price Level:</b>${resp_json.price_level}</small>
+                                <br>
+                                <small><b>Hours:</b></small>
+                                <small>`;
+                            if (resp_json.opening_hours) {
+                                innerHTML += '<br>';
+                                resp_json.opening_hours.weekday_text.forEach(el => {
+                                innerHTML += `${el}
+                                    <br>`;
+                                });
+                            } else {
+                                innerHTML += 'N/A';
+                            }
+                            innerHTML += '</small>';
+                            innerHTML = innerHTML.replace(/undefined/g, 'N/A');
+                            more_details_el.innerHTML = innerHTML;
+                            remove_marker('selected');
+                            add_marker('selected', resp_json.geometry.location.lat, resp_json.geometry.location.lng);
+                            const new_gen_loc_center = new google.maps.LatLng(
+                                resp_json.geometry.location.lat, 
+                                resp_json.geometry.location.lng
+                            );
+                            map.panTo(new_gen_loc_center);
+                            map.setZoom(12);
+                        }
+                    });
+                });
+            }
+
+            function get_event_results(on_reload) {
+                if (gen_loc_pos == undefined) {
+                    event_search_result_el.innerHTML = '<small id=\'warning\'>Please provide the general location of the itinerary.</small>';
+                    return;
+                }
+                clearTimeout(event_input_timer);
+                event_input_timer = setTimeout(() => {
+                    if (event_input_el.value != event_input_val || on_reload) {
+                        event_input_val = event_input_el.value;
+                        event_search_result_el.innerHTML = 'Fetching...';
+                        var event_url = `/find_events?lat=${gen_loc_pos.lat}&lng=${gen_loc_pos.lng}&radius=${radius_mi_el.value}`;
+                        if (event_input_el.value != '') {
+                            event_url += `&keyword=${event_input_el.value}`;
+                        }
+                        fetch(event_url, {
+                            method: 'GET',
+                            headers: {'Content-Type': 'application/json'}
+                        }).then(resp => {
+                            resp.text().then(resp_read => {
+                                if (resp_read == 'FAILURE') {
+                                    console.log('FAILURE');
+                                    event_search_result_el.innerHTML = 'Unable to fetch data.';
+                                } else {
+                                    const event_results = JSON.parse(resp_read);
+                                    var innerHTML = ''
+                                    const chosen_events_ids = [...chosen_events.keys()];
+                                    events.clear();
+                                    if (event_results.events.length != 0) {
+                                        for (x = 0; x < event_results.events.length; x++) {
+                                            if (!chosen_events_ids.includes(event_results.events[x].event_id)) {
+                                                var types_kbd_html = '';
+                                                events.set(event_results.events[x].event_id, event_results.events[x]);
+                                                innerHTML += `<div id='events' name='${event_results.events[x].event_id}' onclick=more_event_details(this,'${event_results.events[x].event_id}')>
+                                                    <small><b>${event_results.events[x].name}</b></small>
+                                                    <hr>
+                                                    <kbd>${event_results.events[x].genre}</kbd>
+                                                    <br>
+                                                    <small>${event_results.events[x].event_dates.localDate}</small>
+                                                    <br>
+                                                    <small>${event_results.events[x].event_dates.localTime}</small>
+                                                    <br>
+                                                    <button onclick=record_event('${event_results.events[x].event_id}')>Add</button>
+                                                </div>
+                                                <br>`;
+                                            }
+                                        }
+                                        innerHTML = innerHTML.replace(/undefined/g, 'N/A');
+                                    } else {
+                                        innerHTML += '<small>No events in the provided area. :(</small>';
+                                        console.log('No events found');
+                                    }
+                                    event_search_result_el.innerHTML = innerHTML;
+                                }
+                            });
+                        });
+                    }
+                }, 1000);
+            }
+
+            event_input_el.addEventListener('keyup', () => {
+                get_event_results();
+            });
+
+            function more_event_details(el, event_id) {
+                var event_oi;
+                if (el) {
+                    event_oi = events.get(event_id);
+                } else {
+                    event_oi = chosen_events.get(event_id)[1];
+                }
+                console.log(event_oi);
+                var innerHTML = `<small><b>Name:</b>${event_oi.name}</small>
+                    <br>
+                    <small><b>Genre:</b>${event_oi.genre},<b>Subgenre:</b>${event_oi.subgenre}</small>
+                    <br>
+                    <small><b>Date:</b>${event_oi.event_dates.localDate}</small>
+                    <br>
+                    <small><b>Time:</b>${event_oi.event_dates.localTime}</small>
+                    <br>
+                    <small><b>Location:</b>${event_oi.location.address}, ${event_oi.location.city}, ${event_oi.location.state.stateCode}</small>
+                    <br>
+                    <small><b>Ticketmaster URL:</b>${event_oi.tm_url}</small>
+                    <br>`;
+                if (event_oi.price) {
+                    innerHTML += `<b>Price Range:${event_oi.price.currency} ${event_oi.price.min} - ${event_oi.price.max}`;
+                }
+                innerHTML = innerHTML.replace(/undefined/g, 'N/A');
+                more_details_el.innerHTML = innerHTML;
+                remove_marker('selected');
+                add_marker('selected', event_oi.location.geometry.lat, event_oi.location.geometry.lng);
+                const new_gen_loc_center = new google.maps.LatLng(
+                    event_oi.location.geometry.lat, 
+                    event_oi.location.geometry.lng
+                );
+                map.panTo(new_gen_loc_center);
+                map.setZoom(12);
+            }
+
+            function get_spot_results() {
+                if (gen_loc_pos == undefined) {
+                    spot_search_result_el.innerHTML = '<small id=\'warning\'>Please provide the general location of the itinerary.</small>';
+                    return;
+                }
+                spot_search_result_el.innerHTML = 'Fetching...';
+                spot_url = `/find_instaspots?lat=${gen_loc_pos.lat}&lng=${gen_loc_pos.lng}`;
+                fetch(spot_url, {
+                        method: 'GET',
+                        headers: {'Content-Type': 'application/json'}
+                }).then(resp => {
+                    resp.text().then(resp_read => {
+                        if (resp_read == 'FAILURE') {
+                            console.log('FAILURE');
+                            spot_search_result_el.innerHTML = 'Unable to fetch data.';
+                        } else {
+                            const spot_results = JSON.parse(resp_read);
+                            var innerHTML = '';
+                            const chosen_spots_ids = [...chosen_spots.keys()];
+                            spots.clear();
+                            if (spot_results.data.spots.length != 0) {
+                                for (var x = 0; x < spot_results.data.spots.length; x++) {
+                                    if (!chosen_spots_ids.includes(spot_results.data.spots[x].id)) {
+                                        spots.set(spot_results.data.spots[x].id, spot_results.data.spots[x]);
+                                        innerHTML += `<div id='spots' name='${spot_results.data.spots[x].id}' onclick=more_spot_details(this,'${spot_results.data.spots[x].id}')>
+                                            <small><b>Name:</b>${spot_results.data.spots[x].name}</small>
+                                            <br>
+                                            <button onclick=record_spot('${spot_results.data.spots[x].id}')>Add</button>
+                                        </div>`;
+                                    }
+                                }
+                                innerHTML = innerHTML.replace(/undefined/g, 'N/A');
+                            } else {
+                                innerHTML += '<small>No instaspots in the provided area. :(</small>';
+                                console.log('No instaspots found');
+                            }
+                            spot_search_result_el.innerHTML = innerHTML;
+                        }
+                    });
+                })
+            }
+
+            async function more_spot_details(el, spot_id) {
+                var spot_oi;
+                if (el) {
+                    spot_oi = spots.get(spot_id);
+                } else {
+                    spot_oi = chosen_spots.get(spot_id)[1];
+                }                
+                const new_gen_loc_center = new google.maps.LatLng(
+                    spot_oi.lat,
+                    spot_oi.lng
+                );
+                map.panTo(new_gen_loc_center);
+                map.setZoom(12);
+                const geo_data = await geocoder.geocode({'latLng':new_gen_loc_center});
+                var innerHTML = `<small><b>Name:</b>${spot_oi.name}</small>
+                    <br>
+                    <small><b>Latitude:</b>${spot_oi.lat}</small>
+                    <br>
+                    <small><b>Longitude:</b>${spot_oi.lng}</small>
+                    <br>
+                    <small><b>Address:</b>${await geo_data.results[0].formatted_address}</small>
+                    <br>
+                    <div id='image_div'>`;
+                if (spot_oi.photos.length != 0) {
+                    spot_oi.photos.forEach(el => {
+                        innerHTML += `<img src='${el.urls.regular}'>`;
+                    });
+                } else {
+                    innerHTML += '<small>No photos for this Instaspot. :(</small>';
+                    console.log('No photos found');
+                }
+                innerHTML += '</div>\
+                    </div>';
+                innerHTML = innerHTML.replace(/undefined/g, 'N/A');
+                more_details_el.innerHTML = innerHTML;
+                remove_marker('selected');
+                add_marker('selected', spot_oi.lat, spot_oi.lng);
+            }
+
+            function get_custom_results(on_reload) {
+                if (gen_loc_pos == undefined) {
+                    custom_warning_el.innerHTML = '<small id=\'warning\'>Please provide the general location of the itinerary.</small>';
+                    return;
+                }
+                clearTimeout(custom_input_timer);
+                custom_input_timer = setTimeout(() => {
+                    if (custom_input_el.value != custom_input_val || reload) {
+                        custom_input_val = custom_input_el.value;
+                        custom_warning_el.innerHTML = '';
+                        custom_search_result_el.innerHTML = 'Fetching...';
+                        geo_code({address: custom_input_val}, (result) => {
+                            custom_result = result;
+                            custom_warning_el.innerHTML = '';
+                            var innerHTML = `<div id='custom_place'>
+                                    <small><b>Address:</b>${result.formatted_address}</small>
+                                    <br>
+                                    <small><b>Latitude:</b>${result.geometry.location.lat()}</small>
+                                    <br>
+                                    <small><b>Longitude:</b>${result.geometry.location.lng()}</small>
+                                </div>`;
+                            custom_search_result_el.innerHTML = innerHTML;
+                            more_details_el.innerHTML = innerHTML;
+                            const new_gen_loc_center = new google.maps.LatLng(
+                                result.geometry.location.lat(),
+                                result.geometry.location.lng()
+                            );
+                            remove_marker('selected');
+                            add_marker('selected', result.geometry.location.lat(), result.geometry.location.lng());
+                            map.panTo(new_gen_loc_center);
+                            map.setZoom(12);                            
+                        }, () => {
+                            console.log('FAILURE, unable to mark CUSTOM_LOC');
+                            custom_warning_el.innerHTML = '<small id=\'warning\'>Unable to locate.</small>';
+                            custom_result = undefined;
+                            custom_search_result_el.innerHTML = '';
+                        });
+                    }
+                }, 1000);
+            }
+
+            custom_input_el.addEventListener('keyup', () => {
+                get_custom_results();                
+            });
+
+            function more_custom_details(custom_id) {
+                const custom_oi = chosen_customs.get(custom_id)[1];
+                var innerHTML = `<div id='custom_place'>
+                        <small><b>Address:</b>${custom_oi.formatted_address}</small>
+                        <br>
+                        <small><b>Latitude:</b>${custom_oi.geometry.location.lat}</small>
+                        <br>
+                        <small><b>Longitude:</b>${custom_oi.geometry.location.lng}</small>
+                    </div>`;
+                more_details_el.innerHTML = innerHTML;
+                remove_marker('selected');
+                add_marker('selected', custom_oi.geometry.location.lat, custom_oi.geometry.location.lng);
+                const new_gen_loc_center = new google.maps.LatLng(
+                    custom_oi.location.geometry.lat, 
+                    custom_oi.location.geometry.lng
+                );
+                map.panTo(new_gen_loc_center);
+                map.setZoom(12);
+            }
+
+            function reset() {
+                food_places.clear();
+                shop_places.clear();
+                etmt_places.clear();
+                need_places.clear();
+                events.clear();
+                spots.clear();
+                chosen_places.clear();
+                chosen_events.clear();
+                chosen_spots.clear();
+                chosen_customs.clear();
+                [...markers.keys()].forEach(el => {
+                    remove_marker(el);
+                });
+            }
+
+            function record_place(place_id) {
+                const chosen_place_ids = [...chosen_places.keys()];
+                if (chosen_place_ids.includes(place_id)) {
+                    return;
+                }
+                var places;
+                var type;
+                switch (current_tab) {
+                    case 0:
+                        type = 'food';
+                        places = food_places;
+                        break;
+                    case 1:
+                        type = 'shop';
+                        places = shop_places;
+                        break;
+                    case 2:
+                        type = 'etmt';
+                        places = etmt_places;
+                        break;
+                    case 3:
+                        type = 'need';
+                        places = need_places;
+                }
+                const place_oi = places.get(place_id);
+                chosen_places.set(place_id, [type, place_oi]);
+                add_marker(place_id, place_oi.location.lat, place_oi.location.lng);
+                const new_row = chosen_table_el.insertRow(-1);
+                new_row.id = 'chosen_row';
+                new_row.setAttribute('onclick' , `more_place_details(undefined,'${place_id}')`);
+                const cell0 = new_row.insertCell(0);
+                cell0.innerHTML = place_oi.name;
+                const cell1 = new_row.insertCell(1);
+                cell1.innerHTML = type[0].toUpperCase() + type.slice(1);
+                const cell2 = new_row.insertCell(2);
+                cell2.innerHTML = `<button onclick=delete_chosen(this,'place','${place_id}')>Delete</button>`;
+            }
+
+            function record_event(event_id) {
+                const chosen_event_ids = [...chosen_events.keys()];
+                if (chosen_event_ids.includes(event_id)) {
+                    return;
+                }
+                const event_oi = events.get(event_id);
+                chosen_events.set(event_id, ['event', events.get(event_id)]);
+                add_marker(event_id, event_oi.location.geometry.lat, event_oi.location.geometry.lng);
+                const new_row = chosen_table_el.insertRow(-1);
+                new_row.id = 'chosen_row';
+                new_row.setAttribute('onclick' , `more_event_details(undefined,'${event_id}')`);
+                const cell0 = new_row.insertCell(0);
+                cell0.innerHTML = event_oi.name;
+                const cell1 = new_row.insertCell(1);
+                cell1.innerHTML = 'Event';
+                const cell2 = new_row.insertCell(2);
+                cell2.innerHTML = `<button onclick=delete_chosen(this,'event','${event_id}')>Delete</button>`;
+            }
+
+            function record_spot(spot_id) {
+                const chosen_spots_ids = [...chosen_spots.keys()];
+                if (chosen_spots_ids.includes(spot_id)) {
+                    return;
+                }
+                const spot_oi = spots.get(spot_id);
+                chosen_spots.set(spot_id, ['spot', spots.get(spot_id)]);
+                console.log(spot_oi);
+                add_marker(spot_id, spot_oi.lat, spot_oi.lng);
+                const new_row = chosen_table_el.insertRow(-1);
+                new_row.id = 'chosen_row';
+                new_row.setAttribute('onclick' , `more_spot_details(undefined,'${spot_id}')`);
+                const cell0 = new_row.insertCell(0);
+                cell0.innerHTML = spot_oi.name;
+                const cell1 = new_row.insertCell(1);
+                cell1.innerHTML = 'Spot';
+                const cell2 = new_row.insertCell(2);
+                cell2.innerHTML = `<button onclick=delete_chosen(this,'spot','${spot_id}')>Delete</button>`;
+            }
+
+            function record_custom() {
+                if (custom_result) {
+                    if (custom_add_as_el.value == '') {
+                        custom_warning_el.innerHTML = '<small id=\'warning\'>Please enter the name to add as.</small>';
+                        return;
+                    }
+                    custom_result.name = custom_add_as_el.value;
+                    chosen_customs.set(custom_result.place_id, ['custom', custom_result]);
+                    console.log(custom_result);
+                    add_marker(custom_result.place_id, custom_result.geometry.location.lat(), custom_result.geometry.location.lng());
+                    map.panTo(gen_loc_pos);
+                    map.setZoom(10);
+                    custom_input_el.value = '';
+                    custom_search_result_el.innerHTML = '';
+                    custom_add_as_el.value = '';
+                    const new_row = chosen_table_el.insertRow(-1);
+                    new_row.id = 'chosen_row';
+                    new_row.setAttribute('onclick' , `more_custom_details('${custom_result.place_id}')`);
+                    const cell0 = new_row.insertCell(0);
+                    cell0.innerHTML = custom_result.name;
+                    const cell1 = new_row.insertCell(1);
+                    cell1.innerHTML = 'Custom';
+                    const cell2 = new_row.insertCell(2);
+                    cell2.innerHTML = `<button onclick=delete_chosen(this,'custom','${custom_result.place_id}')>Delete</button>`;
+                    custom_result = undefined;
+                } else {
+                    custom_warning_el.innerHTML = '<small id=\'warning\'>Please search for the location.</small>';
+                }
+            }
+
+            function delete_chosen(el, type, id) {
+                var chosen;
+                switch(type) {
+                    case 'place':
+                        chosen = chosen_places;
+                        break;
+                    case 'event':
+                        chosen = chosen_events;
+                        break;
+                    case 'spot':
+                        chosen = chosen_spots;
+                        break;
+                    case 'custom':
+                        chosen = chosen_customs;
+                        break;
+                }
+                remove_marker(id);
+                chosen.delete(id);
+                el.parentElement.parentElement.remove();
+            }
+        </script>
+    </body>
+</html>

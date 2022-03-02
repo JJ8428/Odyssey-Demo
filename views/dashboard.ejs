@@ -1,0 +1,28 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Odyssey - Dashboard</title>
+</head>
+<body>
+    <p>Odyssey - Dashboard</p>
+    <hr>
+    <p>Logged in as: <%= email %></p>
+    <ul>
+        <li><a href=''>Logout</a></li>
+        <li><a href='/user_settings'>User Settings</a></li>
+        <li><a href='/plan_trip'>Create New Itinerary</a></li>
+    </ul>
+    <script>
+        const logout_link = document.querySelector('a');
+        logout_link.addEventListener('click', (event) => {
+            event.preventDefault();
+            fetch('/logout', {
+                method: 'DELETE', 
+                headers: {'Content-Type': 'application/json'}
+            }).then(resp => {
+                location.assign('/');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,21 +1,86 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Odyssey-Login</title>
-    <style>
-        div {
-            border: 1px solid black,
-        }
-    </style>
+    <title>Odyssey - Sign Up</title>
 </head>
 <body>
-    <h1>Odyssey</h1>
+    <p>Odyssey - Sign Up</p>
+    <hr>
     <ul>
-        <li><a href='/main'>Main Page</a></li>
-        <li><a href='/login'>Login</a></li>
-    </ul>
-    <div>
-        
-    </div>
+        <li><a href="/">Home</a></li>
+        <li><a href="/login">Login</a></li>
+    </ul> 
+    <div id='warning_div'></div>
+    <form>
+        Email:
+        <input type='email' id='email_input'>
+        <br>
+        Confirm Email:
+        <input type='email' id='confirm_email_input'>
+        <br>
+        Password:
+        <input type='text' id='pwd_input'>
+        <br>
+        Confirm Password:
+        <input type='text' id='confirm_pwd_input'>
+        <br>
+        <br>
+        <input type='submit'>
+    </form>
+    <script>
+        const form = document.querySelector('form');
+        const warning_div = document.querySelector('#warning_div');
+        form.addEventListener('submit', (event) => {
+            try {
+                event.preventDefault();
+                const email = document.getElementById('email_input').value;
+                const pwd = document.getElementById('pwd_input').value;
+                const confirm_email = document.getElementById('confirm_email_input').value;
+                const confirm_pwd = document.getElementById('confirm_pwd_input').value;
+                if (email != confirm_email) {
+                    warning_div.innerHTML = 'Emails do not match.';
+                    return;
+                }
+                if (pwd != confirm_pwd) {
+                    warning_div.innerHTML = 'Passwords do not match';
+                    return;
+                }
+                if (pwd.length < 8) {
+                    warning_div.innerHTML = 'Password must be a minimum of 8 characters.';
+                    return;
+                }
+                fetch('/sign_up', {
+                    method: 'POST', 
+                    body: JSON.stringify({
+                        email: email,
+                        password: pwd,
+                    }),
+                    headers: {'Content-Type': 'application/json'}
+                }).then(resp => {
+                    resp.text().then(resp_read => {
+                        if (resp_read == 'SUCCESS') {
+                            location.assign('/dashboard');
+                        }
+                        else {
+                            const resp_json = JSON.parse(resp_read);
+                            // If validation errors exists
+                            if (resp_json.vald_errs) {
+                                var warning_html = '';
+                                resp_json.vald_errs.forEach(el => {
+                                    warning_html += `${el.msg}<br>`
+                                });
+                                warning_html = warning_html.substring(0,warning_html.length-4);
+                                warning_div.innerHTML = warning_html;
+                            } else if (resp_json.error) {
+                                warning_div.innerHTML = resp_json.error;
+                            }
+                        }
+                    });
+                });
+            } catch(err) {
+                console.log(err);
+            }
+        });
+    </script>
 </body>
 </html>

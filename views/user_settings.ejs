@@ -1,0 +1,90 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Odyssey - User Settings</title>
+</head>
+<body>
+    <p>Odyssey - User Settings</p>
+    <hr>
+    <p>Logged in as: <%= email %></p>
+    <ul>
+        <li><a href='/dashboard'>Dashboard</a></li>
+    </ul>
+    <div id='warning_div'></div>
+    <p>Update your Password:</p>
+    <hr>
+    <form id="form1">
+        New Password:
+        <input type='input' id='pwd_input'>
+        <br>
+        Confirm New Password:
+        <input type='input' id='confirm_input'>
+        <br>
+        <br>
+        <input type='submit'>
+    </form>
+    <p>Delete your account:</p>
+    <hr>
+    <form id="form2">
+        Confirm by typing your email:
+        <input type='email' id='confirm_email'>
+        <br>
+        <br>
+        <input type='submit'>
+    </form>
+    <script>
+        const form1 = document.querySelector('#form1');
+        const form2 = document.querySelector('#form2');
+        const warning_div = document.querySelector('#warning_div');
+        form1.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const pwd = document.getElementById('pwd_input').value;
+            const pwd_confirm = document.getElementById('confirm_input').value;
+            if (pwd != pwd_confirm) {
+                warning_div.innerHTML = 'Passwords do not match';
+                return;
+            }
+            if (pwd.length >= 8) {
+                warning_div.innerHTML = 'Password must be a minimum of 8 characters.';
+                return;
+            }
+            fetch('/update_user', {
+                method: 'POST',
+                body: JSON.stringify({
+                    password: pwd
+                }),
+                headers: {'Content-Type': 'application/json'}
+            }).then(resp => {
+                resp.text().then(resp_read => {
+                    if (resp_read == 'SUCCESS') {
+                        warning_div.innerHTML = 'Password Updated Successfully';
+                    } else {
+                        const resp_json = JSON.parse(resp_read);
+                        warning_div.innerHTML = resp_json.vald_errs[0].msg;
+                    }
+                });
+            });
+        });
+        form2.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const conf_email = document.getElementById('confirm_email').value;
+            if (conf_email != '<%= email %>') {
+                warning_div.innerHTML = 'Incorrect email is enterred.';
+                return;
+            }
+            fetch('/delete_user', {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'}
+            }).then(resp => {
+                resp.text().then(resp_read => {
+                    if (resp_read == 'SUCCESS') {
+                        location.assign('/');
+                    } else {
+                        warning_div.innerHTML = 'Unable to delete this account at this time.';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
