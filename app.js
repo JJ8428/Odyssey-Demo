@@ -345,6 +345,6 @@ app.get('/plan_trip', check_tokens, (req, res) => {
 });
 
 host_port = PORT || 5000;
-app.listen(host_ort, () => { // swap host_port with process.env.PORT
+app.listen(host_port, () => { // swap host_port with process.env.PORT
     console.log('App listening on port', PORT);
 });
