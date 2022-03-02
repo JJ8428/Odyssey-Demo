@@ -337,6 +337,21 @@
             const food_search_result_el = document.querySelector('#food_search_result');
             var food_input_timer;
 
+            const shop_input_el = document.querySelector('#shop_search');
+            var shop_input_val;
+            const shop_search_result_el = document.querySelector('#shop_search_result');
+            var shop_input_timer;
+
+            const etmt_input_el = document.querySelector('#etmt_search');
+            var etmt_input_val;
+            const etmt_search_result_el = document.querySelector('#etmt_search_result');
+            var etmt_input_timer;
+
+            const need_input_el = document.querySelector('#need_search');
+            var need_input_val;
+            const need_search_result_el = document.querySelector('#need_search_result');
+            var need_input_timer;
+
             const more_details_el = document.querySelector('#more_details');
 
             const event_input_el = document.querySelector('#event_search');
@@ -535,7 +550,7 @@
                             headers: {'Content-Type': 'application/json'}
                         }).then(resp => {
                             resp.text().then(resp_read => {
-                                if (resp_read == 'FAILURE') {
+                                if (resp_read == 'FAILURE' || resp_read.includes('<')) {
                                     console.log('FAILURE');
                                     food_search_result_el.innerHTML = 'Unable to fetch data.';
                                 } else {
@@ -588,7 +603,244 @@
 
             food_input_el.addEventListener('keyup', () => {
                 get_food_results();
-            });   
+            });
+
+            function get_shop_results(on_reload) {
+                if (gen_loc_pos == undefined) {
+                    shop_search_result_el.innerHTML = '<small id=\'warning\'>Please provide the general location of the itinerary.</small>';
+                    return;
+                }
+                clearTimeout(shop_input_timer);
+                shop_input_timer = setTimeout(() => {
+                    if (shop_input_el.value != shop_input_val || on_reload) {
+                        shop_input_val = shop_input_el.value;
+                        shop_search_result_el.innerHTML = 'Fetching...';
+                        var shop_subtypes = '';
+                        document.querySelectorAll("input[name='shop']:checked").forEach(el => {
+                            shop_subtypes += el.value + ',';
+                        });
+                        shop_subtypes = shop_subtypes.slice(0, -1);
+                        var shop_url = `/find_nearby_places?subtypes=${shop_subtypes}&lat=${gen_loc_pos.lat}&lng=${gen_loc_pos.lng}&radius=${radius_mi_el.value}`;
+                        if (shop_input_el.value != '') {
+                            shop_url += `&keyword=${shop_input_el.value.replace(' ', '%2C')}`;
+                        }
+                        fetch(shop_url, {
+                            method: 'GET',
+                            headers: {'Content-Type': 'application/json'}
+                        }).then(resp => {
+                            resp.text().then(resp_read => {
+                                if (resp_read == 'FAILURE' || resp_read.includes('<')) {
+                                    console.log('FAILURE');
+                                    shop_search_result_el.innerHTML = 'Unable to fetch data.';
+                                } else {
+                                    const shop_results = JSON.parse(resp_read);
+                                    var innerHTML = '';
+                                    const chosen_place_ids = [...chosen_places.keys()];
+                                    shop_places.clear();
+                                    if (shop_results.places.length) {
+                                        for (x = 0; x < shop_results.places.length; x++) {
+                                            if (!chosen_place_ids.includes(shop_results.places[x].place_id)) {
+                                                shop_places.set(shop_results.places[x].place_id, shop_results.places[x]);
+                                                var types_kbd_html = '';
+                                                shop_results.places[x].types.forEach(el => {
+                                                    types_kbd_html += '<kbd>';
+                                                    el.split('_').forEach(el_el => {
+                                                        types_kbd_html += el_el[0].toUpperCase() + el_el.slice(1);
+                                                        if (el_el != el[el.length - 1]) {
+                                                            types_kbd_html += ' ';
+                                                        }
+                                                    });
+                                                    types_kbd_html += '</kbd>\n<br>\n';
+                                                })
+                                                innerHTML += `<div id='shop_places' name='${shop_results.places[x].place_id}' onclick=more_place_details(this,'${shop_results.places[x].place_id}')>
+                                                        <small><b>${shop_results.places[x].name}</b></small>
+                                                        <hr>
+                                                        ${types_kbd_html}
+                                                        <small>Rating:${shop_results.places[x].rating}</small>
+                                                        <br>
+                                                        <small>Price Level:${shop_results.places[x].price_level}</small>
+                                                        <br>
+                                                        <small>${shop_results.places[x].address}</small>
+                                                        <br>
+                                                        <button onclick=record_place('${shop_results.places[x].place_id}')>Add</button>
+                                                    </div>
+                                                    <br>`;
+                                            }
+                                        }
+                                    innerHTML = innerHTML.replace(/undefined/g, 'N/A');
+                                    } else {
+                                        innerHTML = '<small>No shop hot spots in the provided area. :(</small>';
+                                        console.log('No shop found');
+                                    }
+                                    shop_search_result_el.innerHTML = innerHTML;
+                                }
+                            });
+                        });
+                    }
+                }, 1000);
+            }
+
+            shop_input_el.addEventListener('keyup', () => {
+                get_shop_results();
+            });
+
+            function get_etmt_results(on_reload) {
+                if (gen_loc_pos == undefined) {
+                    etmt_search_result_el.innerHTML = '<small id=\'warning\'>Please provide the general location of the itinerary.</small>';
+                    return;
+                }
+                clearTimeout(etmt_input_timer);
+                etmt_input_timer = setTimeout(() => {
+                    if (etmt_input_el.value != etmt_input_val || on_reload) {
+                        etmt_input_val = etmt_input_el.value;
+                        etmt_search_result_el.innerHTML = 'Fetching...';
+                        var etmt_subtypes = '';
+                        document.querySelectorAll("input[name='etmt']:checked").forEach(el => {
+                            etmt_subtypes += el.value + ',';
+                        });
+                        etmt_subtypes = etmt_subtypes.slice(0, -1);
+                        var etmt_url = `/find_nearby_places?subtypes=${etmt_subtypes}&lat=${gen_loc_pos.lat}&lng=${gen_loc_pos.lng}&radius=${radius_mi_el.value}`;
+                        if (etmt_input_el.value != '') {
+                            etmt_url += `&keyword=${etmt_input_el.value.replace(' ', '%2C')}`;
+                        }
+                        fetch(etmt_url, {
+                            method: 'GET',
+                            headers: {'Content-Type': 'application/json'}
+                        }).then(resp => {
+                            resp.text().then(resp_read => {
+                                if (resp_read == 'FAILURE' || resp_read.includes('<')) {
+                                    console.log('FAILURE');
+                                    etmt_search_result_el.innerHTML = 'Unable to fetch data.';
+                                } else {
+                                    const etmt_results = JSON.parse(resp_read);
+                                    var innerHTML = '';
+                                    const chosen_place_ids = [...chosen_places.keys()];
+                                    etmt_places.clear();
+                                    if (etmt_results.places.length) {
+                                        for (x = 0; x < etmt_results.places.length; x++) {
+                                            if (!chosen_place_ids.includes(etmt_results.places[x].place_id)) {
+                                                etmt_places.set(etmt_results.places[x].place_id, etmt_results.places[x]);
+                                                var types_kbd_html = '';
+                                                etmt_results.places[x].types.forEach(el => {
+                                                    types_kbd_html += '<kbd>';
+                                                    el.split('_').forEach(el_el => {
+                                                        types_kbd_html += el_el[0].toUpperCase() + el_el.slice(1);
+                                                        if (el_el != el[el.length - 1]) {
+                                                            types_kbd_html += ' ';
+                                                        }
+                                                    });
+                                                    types_kbd_html += '</kbd>\n<br>\n';
+                                                })
+                                                innerHTML += `<div id='etmt_places' name='${etmt_results.places[x].place_id}' onclick=more_place_details(this,'${etmt_results.places[x].place_id}')>
+                                                        <small><b>${etmt_results.places[x].name}</b></small>
+                                                        <hr>
+                                                        ${types_kbd_html}
+                                                        <small>Rating:${etmt_results.places[x].rating}</small>
+                                                        <br>
+                                                        <small>Price Level:${etmt_results.places[x].price_level}</small>
+                                                        <br>
+                                                        <small>${etmt_results.places[x].address}</small>
+                                                        <br>
+                                                        <button onclick=record_place('${etmt_results.places[x].place_id}')>Add</button>
+                                                    </div>
+                                                    <br>`;
+                                            }
+                                        }
+                                    innerHTML = innerHTML.replace(/undefined/g, 'N/A');
+                                    } else {
+                                        innerHTML = '<small>No etmt hot spots in the provided area. :(</small>';
+                                        console.log('No etmt found');
+                                    }
+                                    etmt_search_result_el.innerHTML = innerHTML;
+                                }
+                            });
+                        });
+                    }
+                }, 1000);
+            }
+
+            etmt_input_el.addEventListener('keyup', () => {
+                get_etmt_results();
+            });
+
+            function get_need_results(on_reload) {
+                if (gen_loc_pos == undefined) {
+                    need_search_result_el.innerHTML = '<small id=\'warning\'>Please provide the general location of the itinerary.</small>';
+                    return;
+                }
+                clearTimeout(need_input_timer);
+                need_input_timer = setTimeout(() => {
+                    if (need_input_el.value != need_input_val || on_reload) {
+                        need_input_val = need_input_el.value;
+                        need_search_result_el.innerHTML = 'Fetching...';
+                        var need_subtypes = '';
+                        document.querySelectorAll("input[name='need']:checked").forEach(el => {
+                            need_subtypes += el.value + ',';
+                        });
+                        need_subtypes = need_subtypes.slice(0, -1);
+                        var need_url = `/find_nearby_places?subtypes=${need_subtypes}&lat=${gen_loc_pos.lat}&lng=${gen_loc_pos.lng}&radius=${radius_mi_el.value}`;
+                        if (need_input_el.value != '') {
+                            need_url += `&keyword=${need_input_el.value.replace(' ', '%2C')}`;
+                        }
+                        fetch(need_url, {
+                            method: 'GET',
+                            headers: {'Content-Type': 'application/json'}
+                        }).then(resp => {
+                            resp.text().then(resp_read => {
+                                if (resp_read == 'FAILURE' || resp_read.includes('<')) {
+                                    console.log('FAILURE');
+                                    need_search_result_el.innerHTML = 'Unable to fetch data.';
+                                } else {
+                                    const need_results = JSON.parse(resp_read);
+                                    var innerHTML = '';
+                                    const chosen_place_ids = [...chosen_places.keys()];
+                                    need_places.clear();
+                                    if (need_results.places.length) {
+                                        for (x = 0; x < need_results.places.length; x++) {
+                                            if (!chosen_place_ids.includes(need_results.places[x].place_id)) {
+                                                need_places.set(need_results.places[x].place_id, need_results.places[x]);
+                                                var types_kbd_html = '';
+                                                need_results.places[x].types.forEach(el => {
+                                                    types_kbd_html += '<kbd>';
+                                                    el.split('_').forEach(el_el => {
+                                                        types_kbd_html += el_el[0].toUpperCase() + el_el.slice(1);
+                                                        if (el_el != el[el.length - 1]) {
+                                                            types_kbd_html += ' ';
+                                                        }
+                                                    });
+                                                    types_kbd_html += '</kbd>\n<br>\n';
+                                                })
+                                                innerHTML += `<div id='need_places' name='${need_results.places[x].place_id}' onclick=more_place_details(this,'${need_results.places[x].place_id}')>
+                                                        <small><b>${need_results.places[x].name}</b></small>
+                                                        <hr>
+                                                        ${types_kbd_html}
+                                                        <small>Rating:${need_results.places[x].rating}</small>
+                                                        <br>
+                                                        <small>Price Level:${need_results.places[x].price_level}</small>
+                                                        <br>
+                                                        <small>${need_results.places[x].address}</small>
+                                                        <br>
+                                                        <button onclick=record_place('${need_results.places[x].place_id}')>Add</button>
+                                                    </div>
+                                                    <br>`;
+                                            }
+                                        }
+                                    innerHTML = innerHTML.replace(/undefined/g, 'N/A');
+                                    } else {
+                                        innerHTML = '<small>No need hot spots in the provided area. :(</small>';
+                                        console.log('No need found');
+                                    }
+                                    need_search_result_el.innerHTML = innerHTML;
+                                }
+                            });
+                        });
+                    }
+                }, 1000);
+            }
+
+            need_input_el.addEventListener('keyup', () => {
+                get_need_results();
+            });
 
             function more_place_details(el, place_id) {
                 var detail_url = `/find_place_details?place_id=${place_id}`;

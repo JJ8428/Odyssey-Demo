@@ -63,4 +63,4 @@ const indepth_nearby_places = (all_urls, place_id_array, place_array, page_chain
     });
 };
 
-module.exports = {indepth_nearby_places};
+module.exports = indepth_nearby_places;
