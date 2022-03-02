@@ -12,11 +12,24 @@ const {check, validationResult} = require('express-validator');
 const User = require('./models/user');
 const RefreshToken = require('./models/refresh_token');
 
+// Temporary
+DB_NAME='mongodb+srv://nsatti:$Renualt88@cluster0.mhlan.mongodb.net/Odyssey?retryWrites=true&w=majority';
+PORT=5000;
+ACCESS_NAME='a_ody_jwt';
+ACCESS_SECRET='testing123testing123';
+REFRESH_NAME='r_ody_jwt';
+REFRESH_SECRET='testing456testing456';
+TICKETMASTER_APIKEY='BnWHeIkAWHxnw4BJJ6SxWD4oauRAxBXl';
+GOOGLE_APIKEY='AIzaSyASx7OI51zra9ErZ76STNZSqVyt8t9v6zg';
+GOOGLE_MAX_PAGE_CHAIN=5;
+GETNOFILTER_APIKEY='25a9aba8-2357-42f1-946d-103d0f96acdc';
+GETNOFILTER_LIMIT=10;
+
 // Environment variables
 require('dotenv').config();
 
 // Connect to DB
-mongoose.connect(process.env.DB_NAME);
+mongoose.connect(DB_NAME);
 var db = mongoose.connection;
 db.on('error', () => {
     console.log('DB Connection Error');
@@ -87,12 +100,12 @@ app.post('/sign_up', urlEncodedParser, [
             console.log('Creating new User schema, giving new auth token saving refresh token in DB');
             new_user.save();
             const auth_token = jwt.sign({email: new_user.email}, 
-                process.env.ACCESS_SECRET,
+                ACCESS_SECRET,
                 {expiresIn: 1000 * 60 * 60 * 24}
             );
             const refresh_token = new RefreshToken({email: new_user.email});
             refresh_token.save();
-            res.cookie(process.env.ACCESS_NAME, auth_token);
+            res.cookie(ACCESS_NAME, auth_token);
             return res.send('SUCCESS');
         } else { // Error due to email provided for new account already being used for another account
             console.log('Sign up error: Given email already in use');
@@ -134,13 +147,13 @@ app.post('/login', urlEncodedParser, [
             if (validPassword) {
                 console.log('Giving user new auth, saving new refresh token in DB');
                 const auth_token = jwt.sign({email: user.email}, 
-                    process.env.ACCESS_SECRET,
+                    ACCESS_SECRET,
                     {expiresIn: 1000 * 60 * 60 * 24}
                 );
                 await RefreshToken.deleteOne({email: user.email});
                 const refresh_token = new RefreshToken({email: user.email});
                 refresh_token.save();
-                res.cookie(process.env.ACCESS_NAME, auth_token);
+                res.cookie(ACCESS_NAME, auth_token);
                 return res.send('SUCCESS');
             } else {
                 console.log('Failed login due to incorrect password');
@@ -160,7 +173,7 @@ app.get('/dashboard', check_tokens, (req, res) => {
 app.delete('/logout', check_tokens, (req, res) => {
     console.log('Logging out user by deleting refresh and auth tokens');
     RefreshToken.deleteOne({email: req.user.email});
-    res.clearCookie(process.env.ACCESS_NAME);
+    res.clearCookie(ACCESS_NAME);
     return res.send('SUCCESS');
 });
 
@@ -203,7 +216,7 @@ app.get('/find_events', check_tokens, (req, res) => {
     // ticketmaster uses geohash
     const geoPoint = geohash.encodeGeoHash(req.query.lat, req.query.lng).substring(0, 9);
     // Create the query url
-    var event_url = `https://app.ticketmaster.com/discovery/v2/events?apikey=${process.env.TICKETMASTER_APIKEY}\
+    var event_url = `https://app.ticketmaster.com/discovery/v2/events?apikey=${TICKETMASTER_APIKEY}\
     &radius=${req.query.radius}\
     &unit=miles&\
     geoPoint=${geoPoint}`;
@@ -275,12 +288,12 @@ app.get('/find_nearby_places', check_tokens, (req, res) => {
         this_url += `type=${el}\
         &location=${location}\
         &radius=${req.query.radius*1609.344}\ 
-        &key=${process.env.GOOGLE_APIKEY}`;
+        &key=${GOOGLE_APIKEY}`;
         this_url = this_url.replace(/\s/g, '');
         base_urls.push(this_url);
     });
     // Run recursive function with array of URLs generated above
-    indepth_nearby_places(base_urls, [], [], process.env.GOOGLE_MAX_PAGE_CHAIN, (output) => {
+    indepth_nearby_places(base_urls, [], [], GOOGLE_MAX_PAGE_CHAIN, (output) => {
         return res.send(output);
     });
 });
@@ -288,7 +301,7 @@ app.get('/find_nearby_places', check_tokens, (req, res) => {
 // Get more details of a particular place
 const fields = ['formatted_address', 'geometry', 'international_phone_number', 'name', 'opening_hours', 'photos' ,'price_level', 'rating', 'types', 'vicinity', 'website'].join('%2C');
 app.get('/find_place_details', check_tokens, (req, res) => {
-    const detail_url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${req.query.place_id}&fields=${fields}&key=${process.env.GOOGLE_APIKEY}`;
+    const detail_url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${req.query.place_id}&fields=${fields}&key=${GOOGLE_APIKEY}`;
     axios.get(detail_url).then(resp => {
         res.json({
             'formatted_address': resp.data.result.formatted_address,
@@ -310,13 +323,13 @@ app.get('/find_place_details', check_tokens, (req, res) => {
 });
 
 app.get('/find_instaspots', (req, res) => {
-    const spot_url = `https://us-central1-mari-a5cc7.cloudfunctions.net/api/v1/spots/getByArea/10/${req.query.lat}/${req.query.lng}/${process.env.GETNOFILTER_LIMIT}`;
+    const spot_url = `https://us-central1-mari-a5cc7.cloudfunctions.net/api/v1/spots/getByArea/10/${req.query.lat}/${req.query.lng}/${GETNOFILTER_LIMIT}`;
     const config = {
         headers: {
             Accept: 'application/json',
             'Cache-Control': 'no-cache',
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${process.env.GETNOFILTER_APIKEY}`,
+            Authorization: `Bearer ${GETNOFILTER_APIKEY}`,
         }
     };
     axios.get(spot_url, config).then(resp => {
@@ -331,6 +344,6 @@ app.get('/plan_trip', check_tokens, (req, res) => {
     res.render('plan_trip', {email: req.user.email});
 });
 
-app.listen(process.env.PORT, () => {
-    console.log('App listening on port', process.env.PORT);
+app.listen(PORT, () => {
+    console.log('App listening on port', PORT);
 });
