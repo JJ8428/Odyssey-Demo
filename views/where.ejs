@@ -1,7 +1,7 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>Odyssey - Create an Itinerary</title>
+        <title>Odyssey - Create an Itinerary - Where To</title>
         <style>
             #coord_td {
                 width: 25%;
@@ -107,9 +107,9 @@
                     <button onclick=get_user_location()>Use my location</button>
                 </td>
                 <td id='coord_td'>
-                    Geotag:
+                    Address:
                     <hr>
-                    <span id='geotag'></span>
+                    <span id='address'></span>
                 </td>
                 <td id='coord_td'>
                     Coordinate:
@@ -294,6 +294,14 @@
                 return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
             });
 
+            console.log('<%- input %>');
+            console.log('<%- address %>');
+            console.log('<%- radius %>');
+            console.log(JSON.parse('<%- chosen_places %>'));
+            console.log(JSON.parse('<%- chosen_events %>'));
+            console.log(JSON.parse('<%- chosen_spots %>'));
+            console.log(JSON.parse('<%- chosen_customs %>'));
+
             const geocoder = new google.maps.Geocoder();
 
             const map = new google.maps.Map(
@@ -308,7 +316,7 @@
             var gen_loc_val;
             const gen_loc_el = document.querySelector('#general_loc');
             const gen_loc_warning_el = document.querySelector('#general_loc_warning');
-            const geotag_span = document.querySelector('#geotag');
+            const address_span = document.querySelector('#address');
             const latlng_span = document.querySelector('#latlng');
             const radius_mi_el = document.querySelector('#radius_mi');
 
@@ -325,7 +333,7 @@
             const spots = new Map();
             var custom_result;
             
-            var geotag;
+            var address;
 
             const chosen_places = new Map();
             const chosen_events = new Map();
@@ -393,8 +401,8 @@
                             };
                             latlng_span.innerHTML = `<small>{${gen_loc_pos.lat},${gen_loc_pos.lng}}</small>`;
                             geocoder.geocode({'latLng':gen_loc_pos}).then((geo_data) => {
-                                geotag = geo_data.results[0].formatted_address;
-                                geotag_span.innerHTML = `<small>${geotag}</small>`;
+                                address = geo_data.results[0].formatted_address;
+                                address_span.innerHTML = `<small>${address}</small>`;
                             });
                             gen_loc_el.value = 'User Location';
                             var new_gen_loc_center = new google.maps.LatLng(
@@ -423,8 +431,8 @@
                         // reset();
                         gen_loc_val = gen_loc_el.value;
                         geo_code({address: gen_loc_val}, (result) => {
-                            geotag = result.formatted_address;
-                            geotag_span.innerHTML = `<small>${geotag}</small>`;
+                            address = result.formatted_address;
+                            address_span.innerHTML = `<small>${address}</small>`;
                             gen_loc_pos = {
                                 lat: Math.ceil(result.geometry.location.lat()*1000)/1000,
                                 lng: Math.ceil(result.geometry.location.lng()*1000)/1000
@@ -541,9 +549,9 @@
                             food_subtypes += el.value + ',';
                         });
                         food_subtypes = food_subtypes.slice(0, -1);
-                        var food_url = `/find_nearby_places?subtypes=${food_subtypes}&lat=${gen_loc_pos.lat}&lng=${gen_loc_pos.lng}&radius=${radius_mi_el.value}`;
+                        var food_url = `/find_nearby_places/${gen_loc_pos.lat}/${gen_loc_pos.lng}/${radius_mi_el.value}/${food_subtypes}`;
                         if (food_input_el.value != '') {
-                            food_url += `&keyword=${food_input_el.value.replace(' ', '%2C')}`;
+                            food_url += `/${food_input_el.value.replace(' ', '%2C')}`;
                         }
                         fetch(food_url, {
                             method: 'GET',
@@ -620,9 +628,9 @@
                             shop_subtypes += el.value + ',';
                         });
                         shop_subtypes = shop_subtypes.slice(0, -1);
-                        var shop_url = `/find_nearby_places?subtypes=${shop_subtypes}&lat=${gen_loc_pos.lat}&lng=${gen_loc_pos.lng}&radius=${radius_mi_el.value}`;
+                        var shop_url = `/find_nearby_places/${gen_loc_pos.lat}/${gen_loc_pos.lng}/${radius_mi_el.value}/${shop_subtypes}`;
                         if (shop_input_el.value != '') {
-                            shop_url += `&keyword=${shop_input_el.value.replace(' ', '%2C')}`;
+                            shop_url += `/${shop_input_el.value.replace(' ', '%2C')}`;
                         }
                         fetch(shop_url, {
                             method: 'GET',
@@ -699,9 +707,9 @@
                             etmt_subtypes += el.value + ',';
                         });
                         etmt_subtypes = etmt_subtypes.slice(0, -1);
-                        var etmt_url = `/find_nearby_places?subtypes=${etmt_subtypes}&lat=${gen_loc_pos.lat}&lng=${gen_loc_pos.lng}&radius=${radius_mi_el.value}`;
+                        var etmt_url = `/find_nearby_places/${gen_loc_pos.lat}/${gen_loc_pos.lng}/${radius_mi_el.value}/${etmt_subtypes}`;
                         if (etmt_input_el.value != '') {
-                            etmt_url += `&keyword=${etmt_input_el.value.replace(' ', '%2C')}`;
+                            etmt_url += `/${etmt_input_el.value.replace(' ', '%2C')}`;
                         }
                         fetch(etmt_url, {
                             method: 'GET',
@@ -778,9 +786,9 @@
                             need_subtypes += el.value + ',';
                         });
                         need_subtypes = need_subtypes.slice(0, -1);
-                        var need_url = `/find_nearby_places?subtypes=${need_subtypes}&lat=${gen_loc_pos.lat}&lng=${gen_loc_pos.lng}&radius=${radius_mi_el.value}`;
+                        var need_url = `/find_nearby_places/${gen_loc_pos.lat}/${gen_loc_pos.lng}/${radius_mi_el.value}/${need_subtypes}`;
                         if (need_input_el.value != '') {
-                            need_url += `&keyword=${need_input_el.value.replace(' ', '%2C')}`;
+                            need_url += `/${need_input_el.value.replace(' ', '%2C')}`;
                         }
                         fetch(need_url, {
                             method: 'GET',
@@ -843,7 +851,7 @@
             });
 
             function more_place_details(el, place_id) {
-                var detail_url = `/find_place_details?place_id=${place_id}`;
+                var detail_url = `/find_place_details/${place_id}`;
                 fetch(detail_url, {
                     method: 'GET',
                     headers: {'Content-Type': 'application/json'}
@@ -866,7 +874,9 @@
                                 });
                                 types_kbd_html += '</kbd>\n';
                             });
-                            var innerHTML = `<small><b>Name:</b>${resp_json.name}</small>
+                            var innerHTML = `More Details:
+                                <hr>
+                                <small><b>Name:</b>${resp_json.name}</small>
                                 <br>
                                 ${types_kbd_html}
                                 <br>
@@ -917,9 +927,9 @@
                     if (event_input_el.value != event_input_val || on_reload) {
                         event_input_val = event_input_el.value;
                         event_search_result_el.innerHTML = 'Fetching...';
-                        var event_url = `/find_events?lat=${gen_loc_pos.lat}&lng=${gen_loc_pos.lng}&radius=${radius_mi_el.value}`;
+                        var event_url = `/find_events/${gen_loc_pos.lat}/${gen_loc_pos.lng}/${radius_mi_el.value}`;
                         if (event_input_el.value != '') {
-                            event_url += `&keyword=${event_input_el.value}`;
+                            event_url += `/${event_input_el.value}`;
                         }
                         fetch(event_url, {
                             method: 'GET',
@@ -940,9 +950,9 @@
                                                 var types_kbd_html = '';
                                                 events.set(event_results.events[x].event_id, event_results.events[x]);
                                                 innerHTML += `<div id='events' name='${event_results.events[x].event_id}' onclick=more_event_details(this,'${event_results.events[x].event_id}')>
-                                                    <small><b>${event_results.events[x].name}</b></small>
-                                                    <hr>
                                                     <kbd>${event_results.events[x].genre}</kbd>
+                                                    <br>
+                                                    <small><b>${event_results.events[x].name}</b></small>
                                                     <br>
                                                     <small>${event_results.events[x].event_dates.localDate}</small>
                                                     <br>
@@ -977,8 +987,9 @@
                 } else {
                     event_oi = chosen_events.get(event_id)[1];
                 }
-                console.log(event_oi);
-                var innerHTML = `<small><b>Name:</b>${event_oi.name}</small>
+                var innerHTML = `More Details:
+                    <hr>
+                    <small><b>Name:</b>${event_oi.name}</small>
                     <br>
                     <small><b>Genre:</b>${event_oi.genre},<b>Subgenre:</b>${event_oi.subgenre}</small>
                     <br>
@@ -1011,7 +1022,7 @@
                     return;
                 }
                 spot_search_result_el.innerHTML = 'Fetching...';
-                spot_url = `/find_instaspots?lat=${gen_loc_pos.lat}&lng=${gen_loc_pos.lng}`;
+                spot_url = `/find_instaspots/${gen_loc_pos.lat}/${gen_loc_pos.lng}`;
                 fetch(spot_url, {
                         method: 'GET',
                         headers: {'Content-Type': 'application/json'}
@@ -1061,7 +1072,9 @@
                 map.panTo(new_gen_loc_center);
                 map.setZoom(12);
                 const geo_data = await geocoder.geocode({'latLng':new_gen_loc_center});
-                var innerHTML = `<small><b>Name:</b>${spot_oi.name}</small>
+                var innerHTML = `More Details:
+                    <hr>
+                    <small><b>Name:</b>${spot_oi.name}</small>
                     <br>
                     <small><b>Latitude:</b>${spot_oi.lat}</small>
                     <br>
@@ -1133,7 +1146,9 @@
 
             function more_custom_details(custom_id) {
                 const custom_oi = chosen_customs.get(custom_id)[1];
-                var innerHTML = `<div id='custom_place'>
+                var innerHTML = `More Details:
+                    <hr>
+                    <div id='custom_place'>
                         <small><b>Address:</b>${custom_oi.formatted_address}</small>
                         <br>
                         <small><b>Latitude:</b>${custom_oi.geometry.location.lat}</small>
@@ -1198,9 +1213,9 @@
                 new_row.id = 'chosen_row';
                 new_row.setAttribute('onclick' , `more_place_details(undefined,'${place_id}')`);
                 const cell0 = new_row.insertCell(0);
-                cell0.innerHTML = place_oi.name;
+                cell0.innerHTML = '<small>' + place_oi.name + '</small>';
                 const cell1 = new_row.insertCell(1);
-                cell1.innerHTML = type[0].toUpperCase() + type.slice(1);
+                cell1.innerHTML = '<small>' + type[0].toUpperCase() + type.slice(1) + '</small>';
                 const cell2 = new_row.insertCell(2);
                 cell2.innerHTML = `<button onclick=delete_chosen(this,'place','${place_id}')>Delete</button>`;
             }
@@ -1217,9 +1232,9 @@
                 new_row.id = 'chosen_row';
                 new_row.setAttribute('onclick' , `more_event_details(undefined,'${event_id}')`);
                 const cell0 = new_row.insertCell(0);
-                cell0.innerHTML = event_oi.name;
+                cell0.innerHTML = '<small>' + event_oi.name + '</small>';
                 const cell1 = new_row.insertCell(1);
-                cell1.innerHTML = 'Event';
+                cell1.innerHTML = '<small>Event</small>';
                 const cell2 = new_row.insertCell(2);
                 cell2.innerHTML = `<button onclick=delete_chosen(this,'event','${event_id}')>Delete</button>`;
             }
@@ -1237,9 +1252,9 @@
                 new_row.id = 'chosen_row';
                 new_row.setAttribute('onclick' , `more_spot_details(undefined,'${spot_id}')`);
                 const cell0 = new_row.insertCell(0);
-                cell0.innerHTML = spot_oi.name;
+                cell0.innerHTML = '<small>' + spot_oi.name + '</small>';
                 const cell1 = new_row.insertCell(1);
-                cell1.innerHTML = 'Spot';
+                cell1.innerHTML = '<small>Spot</small>';
                 const cell2 = new_row.insertCell(2);
                 cell2.innerHTML = `<button onclick=delete_chosen(this,'spot','${spot_id}')>Delete</button>`;
             }
@@ -1263,9 +1278,9 @@
                     new_row.id = 'chosen_row';
                     new_row.setAttribute('onclick' , `more_custom_details('${custom_result.place_id}')`);
                     const cell0 = new_row.insertCell(0);
-                    cell0.innerHTML = custom_result.name;
+                    cell0.innerHTML = '<small>' + custom_result.name + '</small>';
                     const cell1 = new_row.insertCell(1);
-                    cell1.innerHTML = 'Custom';
+                    cell1.innerHTML = '<small>Custom</small>';
                     const cell2 = new_row.insertCell(2);
                     cell2.innerHTML = `<button onclick=delete_chosen(this,'custom','${custom_result.place_id}')>Delete</button>`;
                     custom_result = undefined;

@@ -32,7 +32,7 @@ rule.minute = 00;
 rule.second = 00;
 rule.dayOfWeek = new scheduler.Range(0, 6);
 scheduler.scheduleJob(rule, async () => {
-    await RefreshToken.deleteMany({createdAt:{$lt:new Date(Date.now() - 1000 * 60 * 60 * 24)}});
+    await RefreshToken.deleteMany({createdAt:{$lt:new Date(Date.now() - 1000*60*60*24)}});
 });
 
 // Configure express app
@@ -78,7 +78,6 @@ app.post('/sign_up', urlEncodedParser, [
     const new_user = new User({
         email: req.body.email,
         password: new_pwd,
-        preferences: [0,0,0,0,0] // TODO: Change to reflect # of questions and if first time user
     });
     try {
         // Check if there exists a user with same email already
@@ -89,7 +88,7 @@ app.post('/sign_up', urlEncodedParser, [
             new_user.save();
             const auth_token = jwt.sign({email: new_user.email}, 
                 process.env.ACCESS_SECRET,
-                {expiresIn: 1000 * 60 * 60 * 24}
+                {expiresIn: 1000*60*60*24}
             );
             const refresh_token = new RefreshToken({email: new_user.email});
             refresh_token.save();
@@ -136,7 +135,7 @@ app.post('/login', urlEncodedParser, [
                 console.log('Giving user new auth, saving new refresh token in DB');
                 const auth_token = jwt.sign({email: user.email}, 
                     process.env.ACCESS_SECRET,
-                    {expiresIn: 1000 * 60 * 60 * 24}
+                    {expiresIn: 1000*60*60*24}
                 );
                 await RefreshToken.deleteOne({email: user.email});
                 const refresh_token = new RefreshToken({email: user.email});
@@ -200,17 +199,17 @@ app.delete('/delete_user', check_tokens, (req, res) => {
     return res.send('SUCCESS');
 });
 
-app.get('/find_events', check_tokens, (req, res) => {
+app.get('/find_events/:lat/:lng/:radius/:keywords?', check_tokens, (req, res) => {
     // ticketmaster uses geohash
-    const geoPoint = geohash.encodeGeoHash(req.query.lat, req.query.lng).substring(0, 9);
+    const geoPoint = geohash.encodeGeoHash(req.params.lat, req.params.lng).substring(0, 9);
     // Create the query url
     var event_url = `https://app.ticketmaster.com/discovery/v2/events?apikey=${process.env.TICKETMASTER_APIKEY}\
-    &radius=${req.query.radius}\
+    &radius=${req.params.radius}\
     &unit=miles&\
     geoPoint=${geoPoint}`;
     event_url = event_url.replace(/\s/g, '');
-    if (req.query.keyword) {
-        event_url += `&keyword=${req.query.keyword}`;
+    if (req.params.keywords) {
+        event_url += `&keyword=${req.params.keywords}`;
     }
     // Send request to ticketmaster and parse results accordingly
     axios.get(event_url).then(resp => {
@@ -264,18 +263,18 @@ app.get('/find_events', check_tokens, (req, res) => {
     })
 });
 
-app.get('/find_nearby_places', check_tokens, (req, res) => {
-    var selected_types = req.query.subtypes.split(',');
-    const location = `${req.query.lat},${req.query.lng}`;
+app.get('/find_nearby_places/:lat/:lng/:radius/:subtypes/:keywords?', check_tokens, (req, res) => {
+    const location = `${req.params.lat},${req.params.lng}`;
+    var selected_types = req.params.subtypes.split(',');
     var base_urls = [];
     selected_types.forEach(el => {
         var this_url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?`;
-        if (req.query.keyword) {
-            this_url += `keyword=${req.query.keyword.replace(' ', '%2C')}&`;
+        if (req.params.keywords) {
+            this_url += `keyword=${req.params.keywords.replace(' ', '%2C')}&`;
         }
         this_url += `type=${el}\
         &location=${location}\
-        &radius=${req.query.radius*1609.344}\ 
+        &radius=${req.params.radius*1609.344}\ 
         &key=${process.env.GOOGLE_APIKEY}`;
         this_url = this_url.replace(/\s/g, '');
         base_urls.push(this_url);
@@ -288,8 +287,8 @@ app.get('/find_nearby_places', check_tokens, (req, res) => {
 
 // Get more details of a particular place
 const fields = ['formatted_address', 'geometry', 'international_phone_number', 'name', 'opening_hours', 'photos' ,'price_level', 'rating', 'types', 'vicinity', 'website'].join('%2C');
-app.get('/find_place_details', check_tokens, (req, res) => {
-    const detail_url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${req.query.place_id}&fields=${fields}&key=${process.env.GOOGLE_APIKEY}`;
+app.get('/find_place_details/:place_id', check_tokens, (req, res) => {
+    const detail_url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${req.params.place_id}&fields=${fields}&key=${process.env.GOOGLE_APIKEY}`;
     axios.get(detail_url).then(resp => {
         res.json({
             'formatted_address': resp.data.result.formatted_address,
@@ -310,8 +309,8 @@ app.get('/find_place_details', check_tokens, (req, res) => {
     });
 });
 
-app.get('/find_instaspots', (req, res) => {
-    const spot_url = `https://us-central1-mari-a5cc7.cloudfunctions.net/api/v1/spots/getByArea/10/${req.query.lat}/${req.query.lng}/${process.env.GETNOFILTER_LIMIT}`;
+app.get('/find_instaspots/:lat/:lng', (req, res) => {
+    const spot_url = `https://us-central1-mari-a5cc7.cloudfunctions.net/api/v1/spots/getByArea/10/${req.params.lat}/${req.params.lng}/${process.env.GETNOFILTER_LIMIT}`;
     const config = {
         headers: {
             Accept: 'application/json',
@@ -328,9 +327,58 @@ app.get('/find_instaspots', (req, res) => {
     });
 });
 
-app.get('/plan_trip', check_tokens, (req, res) => {
-    res.render('plan_trip', {email: req.user.email});
+app.get('/where/:location_details/:chosen_places/:chosen_events/:chosen_spots/:chosen_customs', check_tokens, (req, res) => {
+
+    var location_details, input, address, radius, chosen_places, chosen_events, chosen_spots, chosen_customs;
+    try {
+        if (req.params.location_details == 'new') {
+            console.log('a');
+            location_details = {
+                input: undefined,
+                address: undefined,
+                radius: undefined
+            };
+            chosen_places = [];
+            chosen_events = [];
+            chosen_spots = [];
+            chosen_customs = [];
+        } else {
+            location_details = JSON.parse(req.params.location_details);
+            if (!location_details.input || !location_details.address || !location_details.radius) throw 'Illegal Request for /where: Bad Request.';
+            (req.params.chosen_places != 'new') ? chosen_places = JSON.parse(req.params.chosen_places) : chosen_places = [];
+            (req.params.chosen_events != 'new') ? chosen_events = JSON.parse(req.params.chosen_events) : chosen_events = [];
+            (req.params.chosen_spots != 'new') ? chosen_spots = JSON.parse(req.params.chosen_spots) : chosen_spots = [];
+            (req.params.chosen_customs != 'new') ? chosen_customs = JSON.parse(req.params.chosen_customs) : chosen_customs = [];
+            const chosen_count = chosen_places.length + chosen_events.length + chosen_spots.length + chosen_customs.length;
+            try {
+                new Map(chosen_places);
+                new Map(chosen_events);
+                new Map(chosen_spots);
+                new Map(chosen_customs);
+            } catch (err) {
+                throw 'Illegal Request for /where: Bad Request.'
+            }
+            if (chosen_count > process.env.MAX_CHOSEN) throw 'Illegal Request to /where: Request exceeds checkpoint limit (8).';
+        }
+    } catch (err) {
+        return res.render('illegal', {email: req.user.email, error: err});
+    }
+    return res.render('where', {
+        email: req.user.email,
+        input: location_details.input,
+        address: location_details.address,
+        radius: location_details.radius,
+        chosen_places: [[1, 2], [3, 4]],
+        chosen_events: chosen_events,
+        chosen_spots: chosen_spots,
+        chosen_customs: chosen_customs
+    });
 });
+
+
+app.get('/when', check_tokens, (req, res) => {
+    return res.render('pt_when', {email: req.user.email});
+})
 
 const host_port = process.env.PORT || 5000;
 app.listen(host_port, () => {
